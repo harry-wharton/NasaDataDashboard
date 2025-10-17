@@ -10,6 +10,40 @@
             <MudText Typo="Typo.h6">Object Positions (Distance from Earth)</MudText>
         </CardHeaderContent>
     </MudCardHeader>
+
+    <MudCardContent>
+        <MudChart ChartType="ChartType.Bar" 
+                  ChartSeries="@_series" 
+                  XAxisLabels="@_xAxisLabels" 
+                  Width="100%" 
+                  Height="450px"
+                  ChartOptions="_chartOptions" />
+
+        <MudDivider Class="my-4" />
+    </MudCardContent>
+
 </MudCard>
 
-@code {}
+@code 
+{
+    // this is all fake data and will be real in the future - from a processor after the api retrieval
+    private List<ChartSeries> _series = new List<ChartSeries>()
+    {
+        new ChartSeries()
+        {
+            Name = "Objects",
+            Data = new double[] { 2.5, 8.3, 15.7, 3.2, 22.1, 6.8, 11.4, 18.9, 4.7, 25.3, 9.1, 13.6, 1.8, 19.8, 7.4 }
+        }
+    };
+
+    private string[] _xAxisLabels = { "2024-1A", "2024-2B", "2024-3C", "2024-4D", "2024-5E", "2024-6F",
+                                       "2024-7G", "2024-8H", "2024-9I", "2024-10J", "2024-11K", "2024-12L",
+                                       "2024-13M", "2024-14N", "2024-15O" };
+
+    private ChartOptions _chartOptions = new ChartOptions()
+    {
+        YAxisTicks = 5,
+        YAxisLines = true,
+        XAxisLines = false,
+    };
+}
