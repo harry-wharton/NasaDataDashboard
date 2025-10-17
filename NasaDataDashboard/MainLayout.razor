@@ -1,16 +1,31 @@
 ﻿@inherits LayoutComponentBase
 
+<!-- MudBlazor Providers, applies theme and support for various things -->
 <MudThemeProvider Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
+<!-- Main Layout Structure -->
 <MudLayout>
+    <!-- Nav Bar -->
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+        <MudText Typo="Typo.h5" Class="ml-3">Data Dashboard</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+    </MudAppBar>
+
     <MudMainContent>
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
             @Body
         </MudContainer>
     </MudMainContent>
+
 </MudLayout>
 
 @code {
+    // Can alter this for custom theme
     private MudTheme _theme = new MudTheme()
         {
             PaletteLight = new PaletteLight()
@@ -21,17 +36,7 @@
             PaletteDark = new PaletteDark()
             {
                 Primary = Colors.Blue.Lighten1,
-                Surface = "#1e1e2d",
-                Background = "#1a1a27",
-                BackgroundGray = "#151521",
-                AppbarBackground = "#1e1e2d",
-                DrawerBackground = "#1e1e2d",
-                ActionDefault = "#b0b0ba",
-                ActionDisabled = "rgba(255,255,255, 0.26)",
-                TextPrimary = "rgba(255,255,255, 0.87)",
-                TextSecondary = "rgba(255,255,255, 0.60)",
-                TextDisabled = "rgba(255,255,255, 0.38)"
+                AppbarBackground = Colors.Blue.Default,
             }
         };
-        
 }
