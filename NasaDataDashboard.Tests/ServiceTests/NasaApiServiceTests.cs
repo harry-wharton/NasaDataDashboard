@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Moq;
 using Moq.Protected;
 using NasaDataDashboard.Data.Services;
 using System.Net;
@@ -27,6 +28,10 @@ namespace NasaDataDashboard.Tests.ServiceTests
 
             var handlerMock = new Mock<HttpMessageHandler>();
 
+            // Fake cache and config
+            var fakeCache = Mock.Of<IMemoryCache>();
+            var fakeConfig = Mock.Of<Microsoft.Extensions.Configuration.IConfiguration>();
+
             // Sets up the mock handler we just created
             handlerMock
                 .Protected()
@@ -43,7 +48,7 @@ namespace NasaDataDashboard.Tests.ServiceTests
             // Use the mock just set up to create the client
             var httpClient = new HttpClient(handlerMock.Object);
 
-            _service = new NasaApiService(httpClient);
+            _service = new NasaApiService(httpClient, fakeCache, fakeConfig);
         }
 
         [Test]
