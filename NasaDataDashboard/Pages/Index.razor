@@ -1,50 +1,73 @@
-﻿
-@page "/"
-
+﻿@page "/"
 <PageTitle>Dashboard</PageTitle>
-
 <MudText Typo="Typo.h3" Class="mb-4">Near To Earth Object Tracker</MudText>
-
 <MudCard Elevation="4">
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.h6">Object Positions (Distance from Earth)</MudText>
+            <MudText Typo="Typo.h6">Asteroid Distance from Earth</MudText>
+            <MudText Typo="Typo.body2">Showing the 10 closest asteroids</MudText>
         </CardHeaderContent>
     </MudCardHeader>
-
     <MudCardContent>
-        <MudChart ChartType="ChartType.Bar" 
-                  ChartSeries="@_series" 
-                  XAxisLabels="@_xAxisLabels" 
-                  Width="100%" 
-                  Height="450px"
-                  ChartOptions="_chartOptions" />
+        <div style="display: flex; align-items: center;">
+            <MudText Typo="Typo.body2" Style="writing-mode: vertical-rl; transform: rotate(180deg); margin-right: 8px;">
+                Distance from Earth (millions of km)
+            </MudText>
+            <div style="flex: 1;">
+                <MudChart ChartType="ChartType.Bar" 
+                          ChartSeries="@_series" 
+                          XAxisLabels="@_xAxisLabels" 
+                          Width="100%" 
+                          Height="500px"
+                          ChartOptions="_chartOptions" />
+            </div>
+        </div>
+
+        <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2">
+            Asteroid IDs
+        </MudText>
 
         <MudDivider Class="my-4" />
     </MudCardContent>
-
 </MudCard>
-
-@code 
+@inject Data.Services.NasaApiService nasaApiService
+@code
 {
-    // this is all fake data and will be real in the future - from a processor after the api retrieval
-    private List<ChartSeries> _series = new List<ChartSeries>()
-    {
-        new ChartSeries()
-        {
-            Name = "Objects",
-            Data = new double[] { 2.5, 8.3, 15.7, 3.2, 22.1, 6.8, 11.4, 18.9, 4.7, 25.3, 9.1, 13.6, 1.8, 19.8, 7.4 }
-        }
-    };
-
-    private string[] _xAxisLabels = { "1", "2", "3", "4", "5", "6",
-                                       "7", "8", "9", "10", "11", "12",
-                                       "13", "14", "15" };
+    private List<Data.Objects.AsteroidData> _asteroids = new();
+    private string[] _xAxisLabels = Array.Empty<string>();
+    private List<ChartSeries> _series = new List<ChartSeries>();
 
     private ChartOptions _chartOptions = new ChartOptions()
+        {
+            YAxisTicks = 10,
+            YAxisLines = true,
+            XAxisLines = true,
+            InterpolationOption = InterpolationOption.Straight,
+            YAxisFormat = "N2",
+            ShowLegend = false // Hide the legend since we have custom labels
+        };
+
+    protected override async Task OnInitializedAsync()
     {
-        YAxisTicks = 5,
-        YAxisLines = true,
-        XAxisLines = false,
-    };
+        _asteroids = await nasaApiService.GetNeoAsync();
+
+        // Sort by distance and take the 10 closest asteroids
+        var closestAsteroids = _asteroids
+            .OrderBy(a => a.DistanceFromEarth)
+            .Take(10)
+            .ToList();
+
+        // Create x axis labels using asteroid IDs
+        _xAxisLabels = closestAsteroids.Select(a => a.Id).ToArray();
+
+        // Create chart data, convert distance from km to millions of km
+        _series = new List<ChartSeries>
+        {
+            new ChartSeries
+            {
+                Name = "Distance",
+                Data = closestAsteroids.Select(a => Math.Round((double)(a.DistanceFromEarth / 1000000m), 2)).ToArray()
+            }
+        };
+    }
 }

@@ -9,43 +9,61 @@ namespace NasaDataDashboard.Data.Parsers
         {
             var asteroidList = new List<AsteroidData>();
 
-            // Navigate through json and map to asteroid data obj
-            if (json.RootElement.TryGetProperty("near_earth_objects", out JsonElement nearEarthObjects))
+            try
             {
-                // Iterate through each date in near_earth_objects
-                foreach (JsonProperty dateProperty in nearEarthObjects.EnumerateObject())
+                // Navigate through json and map to asteroid data obj
+                if (json.RootElement.TryGetProperty("near_earth_objects", out JsonElement nearEarthObjects))
                 {
-                    // Each date contains an array of asteroids
-                    foreach (JsonElement asteroid in dateProperty.Value.EnumerateArray())
+                    // Iterate through each date in near_earth_objects
+                    foreach (JsonProperty dateProperty in nearEarthObjects.EnumerateObject())
                     {
-                        var asteroidData = new AsteroidData
+                        // Each date contains an array of asteroids
+                        foreach (JsonElement asteroid in dateProperty.Value.EnumerateArray())
                         {
-                            // Get name and ID of the asteroid
-                            Id = asteroid.GetProperty("id").GetString() ?? "Unknown",
-                            Name = asteroid.GetProperty("name").GetString() ?? "Unknown",
+                            try
+                            {
+                                // Get distance as string first
+                                var distanceString = asteroid
+                                    .GetProperty("close_approach_data")[0]
+                                    .GetProperty("miss_distance")
+                                    .GetProperty("kilometers")
+                                    .GetString();
 
-                            // Get is hazard bool
-                            IsHazardous = asteroid.GetProperty("is_potentially_hazardous_asteroid").GetBoolean(),
+                                var asteroidData = new AsteroidData
+                                {
+                                    // Get name and ID of the asteroid
+                                    Id = asteroid.GetProperty("id").GetString() ?? "Unknown",
+                                    Name = asteroid.GetProperty("name").GetString() ?? "Unknown",
 
-                            // Get min diameter in meters
-                            Diameter = asteroid
-                                .GetProperty("estimated_diameter")
-                                .GetProperty("meters")
-                                .GetProperty("estimated_diameter_min")
-                                .GetDecimal(),
+                                    // Get is hazard bool
+                                    IsHazardous = asteroid.GetProperty("is_potentially_hazardous_asteroid").GetBoolean(),
 
-                            // Get distance from Earth in kilometers from the first close_approach_data
-                            DistanceFromEarth = asteroid
-                                .GetProperty("close_approach_data")[0]
-                                .GetProperty("miss_distance")
-                                .GetProperty("kilometers")
-                                .GetDecimal()
-                        };
+                                    // Get min diameter in meters
+                                    Diameter = asteroid
+                                        .GetProperty("estimated_diameter")
+                                        .GetProperty("meters")
+                                        .GetProperty("estimated_diameter_min")
+                                        .GetDecimal(),
 
-                        asteroidList.Add(asteroidData);
+                                    // Parse distance string to decimal
+                                    DistanceFromEarth = decimal.Parse(distanceString ?? "0")
+                                };
+
+                                asteroidList.Add(asteroidData);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error parsing individual asteroid: {ex.Message}");
+                            }
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error parsing JSON: {ex.Message}");
+            }
+
             return asteroidList;
         }
     }
