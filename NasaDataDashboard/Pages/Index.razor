@@ -1,73 +1,76 @@
 ﻿@page "/"
+
 <PageTitle>Dashboard</PageTitle>
 <MudText Typo="Typo.h3" Class="mb-4">Near To Earth Object Tracker</MudText>
 <MudCard Elevation="4">
-    <MudCardHeader>
-        <CardHeaderContent>
-            <MudText Typo="Typo.h6">Asteroid Distance from Earth</MudText>
-            <MudText Typo="Typo.body2">Showing the 10 closest asteroids</MudText>
-        </CardHeaderContent>
-    </MudCardHeader>
-    <MudCardContent>
-        <div style="display: flex; align-items: center;">
-            <MudText Typo="Typo.body2" Style="writing-mode: vertical-rl; transform: rotate(180deg); margin-right: 8px;">
-                Distance from Earth (millions of km)
-            </MudText>
-            <div style="flex: 1;">
-                <MudChart ChartType="ChartType.Bar" 
-                          ChartSeries="@_series" 
-                          XAxisLabels="@_xAxisLabels" 
-                          Width="100%" 
-                          Height="500px"
-                          ChartOptions="_chartOptions" />
-            </div>
-        </div>
+	<MudCardHeader>
+		<CardHeaderContent>
+			<MudText Typo="Typo.h6">Asteroid Distance from Earth</MudText>
+			<MudText Typo="Typo.body2">Showing the 10 closest asteroids</MudText>
+		</CardHeaderContent>
+	</MudCardHeader>
+	<MudCardContent>
+		<div style="display: flex; align-items: center;">
+			<MudText Typo="Typo.body2" Style="writing-mode: vertical-rl; transform: rotate(180deg); margin-right: 8px;">
+				Distance from Earth (millions of km)
+			</MudText>
+			<div style="flex: 1;">
+				<MudChart ChartType="ChartType.Bar" 
+						  ChartSeries="@_series" 
+						  XAxisLabels="@_xAxisLabels" 
+						  Width="100%" 
+						  Height="500px"
+						  ChartOptions="_chartOptions" />
+			</div>
+		</div>
 
-        <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2">
-            Asteroid IDs
-        </MudText>
+		<MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2">
+			Asteroid IDs
+		</MudText>
 
-        <MudDivider Class="my-4" />
-    </MudCardContent>
+		<MudDivider Class="my-4" />
+	</MudCardContent>
 </MudCard>
+
 @inject Data.Services.NasaApiService nasaApiService
+
 @code
 {
-    private List<Data.Objects.AsteroidData> _asteroids = new();
-    private string[] _xAxisLabels = Array.Empty<string>();
-    private List<ChartSeries> _series = new List<ChartSeries>();
+	private List<Data.Objects.AsteroidData> _asteroids = new();
+	private string[] _xAxisLabels = Array.Empty<string>();
+	private List<ChartSeries> _series = new List<ChartSeries>();
 
-    private ChartOptions _chartOptions = new ChartOptions()
-        {
-            YAxisTicks = 10,
-            YAxisLines = true,
-            XAxisLines = true,
-            InterpolationOption = InterpolationOption.Straight,
-            YAxisFormat = "N2",
-            ShowLegend = false // Hide the legend since we have custom labels
-        };
+	private ChartOptions _chartOptions = new ChartOptions()
+	{
+		YAxisTicks = 10,
+		YAxisLines = true,
+		XAxisLines = true,
+		InterpolationOption = InterpolationOption.Straight,
+		YAxisFormat = "N2",
+		ShowLegend = false // Hide the legend since we have custom labels
+	};
 
-    protected override async Task OnInitializedAsync()
-    {
-        _asteroids = await nasaApiService.GetNeoAsync();
+	protected override async Task OnInitializedAsync()
+	{
+		_asteroids = await nasaApiService.GetNeoAsync();
 
-        // Sort by distance and take the 10 closest asteroids
-        var closestAsteroids = _asteroids
-            .OrderBy(a => a.DistanceFromEarth)
-            .Take(10)
-            .ToList();
+		// Sort by distance and take the 10 closest asteroids
+		var closestAsteroids = _asteroids
+			.OrderBy(a => a.DistanceFromEarth)
+			.Take(10)
+			.ToList();
 
-        // Create x axis labels using asteroid IDs
-        _xAxisLabels = closestAsteroids.Select(a => a.Id).ToArray();
+		// Create x axis labels using asteroid IDs
+		_xAxisLabels = closestAsteroids.Select(a => a.Id).ToArray();
 
-        // Create chart data, convert distance from km to millions of km
-        _series = new List<ChartSeries>
-        {
-            new ChartSeries
-            {
-                Name = "Distance",
-                Data = closestAsteroids.Select(a => Math.Round((double)(a.DistanceFromEarth / 1000000m), 2)).ToArray()
-            }
-        };
-    }
+		// Create chart data, convert distance from km to millions of km
+		_series = new List<ChartSeries>
+		{
+			new ChartSeries
+			{
+				Name = "Distance",
+				Data = closestAsteroids.Select(a => Math.Round((double)(a.DistanceFromEarth / 1000000m), 2)).ToArray()
+			}
+		};
+	}
 }

@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 using NasaDataDashboard.Data.Objects;
 
 namespace NasaDataDashboard.Data.Services
@@ -6,22 +7,75 @@ namespace NasaDataDashboard.Data.Services
     public class NasaApiService
     {
         private readonly HttpClient _httpClient;
-        private const string ApiKey = "DEMO_KEY"; // when changing to actual api key remember to not commit plain text key
+        private readonly IMemoryCache _cache;
+        private const string CacheKey = "neo_data";
+        private readonly string _apiKey;
 
-        public NasaApiService(HttpClient httpClient)
+        public NasaApiService(HttpClient httpClient, IMemoryCache cache, IConfiguration configuration)
         {
             _httpClient = httpClient;
+            _cache = cache;
+            _httpClient.BaseAddress = new Uri("https://api.nasa.gov/");
+            _apiKey = configuration["NasaApi:ApiKey"] ?? "DEMO_KEY";
         }
 
         public async Task<List<AsteroidData>> GetNeoAsync()
         {
-            string url = $"https://api.nasa.gov/neo/rest/v1/feed?start_date=2021-09-07&end_date=2021-09-07&api_key={ApiKey}";
-            string json = await _httpClient.GetStringAsync(url);
+            // Try to get from cache
+            if (_cache.TryGetValue(CacheKey, out List<AsteroidData>? cachedData)) 
+            {
+                Console.WriteLine("Returning cached data");
+                return cachedData!;
+            }
 
-            // Get the parser and parse to asteroid data obj
-            var parser = new Parsers.ParseToObject();
-            var parsed = parser.Parse(JsonDocument.Parse(json));
-            return parsed;
+            Console.WriteLine("Returning fresh data");
+
+            try
+            {
+                var today = DateTime.Now.ToString("yyyy-MM-dd");
+
+                var response = await _httpClient.GetAsync(
+                    $"neo/rest/v1/feed?start_date={today}&end_date={today}&api_key={_apiKey}"
+                );
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonString = await response.Content.ReadAsStringAsync();
+                    var jsonDocument = JsonDocument.Parse(jsonString);
+                    var parser = new Parsers.ParseToObject();
+                    var asteroidData = parser.Parse(jsonDocument);
+
+                    // Cache data, 2 hours expiration
+                    var cacheOptions = new MemoryCacheEntryOptions()
+                        .SetAbsoluteExpiration(TimeSpan.FromHours(2))
+                        .SetPriority(CacheItemPriority.High);
+
+                    _cache.Set(CacheKey, asteroidData, cacheOptions);
+
+                    Console.WriteLine($"Cached {asteroidData.Count} asteroids");
+                    return asteroidData;
+                }
+
+                if (_cache.TryGetValue(CacheKey, out cachedData))
+                {
+                    Console.WriteLine("API failed, but here's the old cached data.");
+                    return cachedData!;
+                }
+
+                return new List<AsteroidData>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching neo data: {ex.Message}");
+
+				if (_cache.TryGetValue(CacheKey, out cachedData))
+				{
+					Console.WriteLine("exception, but here's the old cached data.");
+					return cachedData!;
+				}
+
+                return new List<AsteroidData>();
+			}
         }
     }
 }
