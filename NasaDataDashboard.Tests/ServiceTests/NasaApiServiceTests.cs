@@ -1,6 +1,6 @@
 ﻿using Moq;
 using Moq.Protected;
-using NasaDataDashboard.Data;
+using NasaDataDashboard.Data.Services;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -50,7 +50,7 @@ namespace NasaDataDashboard.Tests.ServiceTests
         public async Task TheApiResponseIsNotNull()
         {
             var res = await _service.GetNeoAsync();
-            Assert.That(res, Is.Not.Null, "Returned null, JsonDocument expected");
+            Assert.That(res, Is.Not.Null, "Returned null, Asteroids expected");
         }
     }
 }
