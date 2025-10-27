@@ -1,7 +1,7 @@
 ﻿@inherits LayoutComponentBase
 
 <!-- MudBlazor Providers, applies theme and support for various things -->
-<MudThemeProvider Theme="_theme" />
+<MudThemeProvider Theme="_theme" IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -9,11 +9,13 @@
 <!-- Main Layout Structure -->
 <MudLayout>
     <!-- Nav Bar -->
-    <MudAppBar Elevation="1">
+    <MudAppBar Elevation="4" Dense="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
-        <MudText Typo="Typo.h5" Class="ml-3">Data Dashboard</MudText>
+        <MudText Typo="Typo.h5" Class="ml-3 font-weight-bold">Data Dashboard</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       OnClick="ToggleTheme" />
+        <MudIconButton Icon="@Icons.Material.Filled.MoreVert" />
     </MudAppBar>
 
     <MudMainContent>
@@ -26,17 +28,24 @@
 
 @code {
     // Can alter this for custom theme
+    // Color codes AI generated for a "NASA" theme
+    private bool _isDarkMode = true;
     private MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
         {
-            PaletteLight = new PaletteLight()
-            {
-                Primary = Colors.Blue.Default,
-                AppbarBackground = Colors.Blue.Default,
-            },
-            PaletteDark = new PaletteDark()
-            {
-                Primary = Colors.Blue.Lighten1,
-                AppbarBackground = Colors.Blue.Default,
-            }
-        };
+            Primary = "#0B3D91",     // deep blue
+            Secondary = "#FC3D21",   // red accent
+            Background = "#F4F6FA",  // light neutral background
+            Surface = "#FFFFFF"
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#58A6FF",     // bright space blue
+            Secondary = "#FF6B4A",   // warm red accent
+            Background = "#0D1117",  // space black/blue background
+            Surface = "#161B22"
+        }
+    };
+    private void ToggleTheme() => _isDarkMode = !_isDarkMode;
 }
