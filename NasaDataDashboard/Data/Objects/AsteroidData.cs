@@ -6,6 +6,7 @@
         public string Name { get; set; }
         public decimal Diameter { get; set; }
         public decimal DistanceFromEarth { get; set; }
+        public decimal Velocity { get; set; }
         public bool IsHazardous { get; set; }
     }
 }
