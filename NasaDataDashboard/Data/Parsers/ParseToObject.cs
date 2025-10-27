@@ -45,6 +45,13 @@ namespace NasaDataDashboard.Data.Parsers
                                         .GetProperty("estimated_diameter_min")
                                         .GetDecimal(),
 
+                                    // Get relative velocity in mph
+                                    Velocity = decimal.Parse(asteroid
+										.GetProperty("close_approach_data")[0]
+										.GetProperty("relative_velocity")
+										.GetProperty("miles_per_hour")
+                                        .GetString()),
+
                                     // Parse distance string to decimal
                                     DistanceFromEarth = decimal.Parse(distanceString ?? "0")
                                 };
