@@ -1,44 +1,55 @@
 ﻿@page "/"
 
 <PageTitle>Dashboard</PageTitle>
-<MudText Typo="Typo.h3" Class="mb-4">Near To Earth Object Tracker</MudText>
-<MudCard Elevation="4">
-	<MudCardHeader>
-		<CardHeaderContent>
-			<MudText Typo="Typo.h6">Asteroid Distance from Earth</MudText>
-			<MudText Typo="Typo.body2">Showing the 10 closest asteroids</MudText>
-		</CardHeaderContent>
-	</MudCardHeader>
-	<MudCardContent>
-		<div style="display: flex; align-items: center;">
-			<MudText Typo="Typo.body2" Style="writing-mode: vertical-rl; transform: rotate(180deg); margin-right: 8px;">
-				Distance from Earth (millions of km)
-			</MudText>
-			<div style="flex: 1;">
-				<MudChart ChartType="ChartType.Bar" 
-						  ChartSeries="@_series" 
-						  XAxisLabels="@_xAxisLabels" 
-						  Width="100%" 
-						  Height="500px"
-						  ChartOptions="_chartOptions" />
-			</div>
-		</div>
 
-		<MudText Typo="Typo.body2" Align="Align.Center" Class="mt-2">
-			Asteroid IDs
-		</MudText>
+<MudText Typo="Typo.h3" Class="mb-4 text-center font-weight-bold">Near-Earth Object Tracker</MudText>
+@if (_loading)
+{
+	<MudProgressLinear Indeterminate="true" />
+	<MudShimmer Lines="6" />
+} else
+{
+	<MudGrid>
+		<MudItem xs="12" md="6">
+			<MudCard>
+				<MudCardHeader><MudText Typo="Typo.h6">Closest Asteroids</MudText></MudCardHeader>
+				<MudCardContent>
+					<MudChart ChartType="ChartType.Bar"
+					ChartSeries="@_distanceSeries"
+					XAxisLabels="@_xAxisLabels"
+					Height="500px"
+					Width="100%"
+					ChartOptions="_chartOptions" />
+				</MudCardContent>
+			</MudCard>
+		</MudItem>
 
-		<MudDivider Class="my-4" />
-	</MudCardContent>
-</MudCard>
+		<MudItem xs="12" md="6">
+			<MudCard>
+				<MudCardHeader><MudText Typo="Typo.h6">Asteroid Velocity</MudText></MudCardHeader>
+					<MudCardContent>
+						<MudChart ChartType="ChartType.Line"
+						ChartSeries="@_velocitySeries"
+						XAxisLabels="@_xAxisLabels"
+						Height="500px"
+						Width="100%"
+						ChartOptions="_chartOptions" />
+					</MudCardContent>
+			</MudCard>
+		</MudItem>
+	</MudGrid>
+}
 
 @inject Data.Services.NasaApiService nasaApiService
 
 @code
 {
+	private List<ChartSeries> _distanceSeries = new();
+	private List<ChartSeries> _velocitySeries = new();
+
+	private bool _loading = true;
 	private List<Data.Objects.AsteroidData> _asteroids = new();
 	private string[] _xAxisLabels = Array.Empty<string>();
-	private List<ChartSeries> _series = new List<ChartSeries>();
 
 	private ChartOptions _chartOptions = new ChartOptions()
 	{
@@ -53,6 +64,7 @@
 	protected override async Task OnInitializedAsync()
 	{
 		_asteroids = await nasaApiService.GetNeoAsync();
+		_loading = false;
 
 		// Sort by distance and take the 10 closest asteroids
 		var closestAsteroids = _asteroids
@@ -64,12 +76,21 @@
 		_xAxisLabels = closestAsteroids.Select(a => a.Id).ToArray();
 
 		// Create chart data, convert distance from km to millions of km
-		_series = new List<ChartSeries>
+		_distanceSeries = new List<ChartSeries>
 		{
 			new ChartSeries
 			{
 				Name = "Distance",
 				Data = closestAsteroids.Select(a => Math.Round((double)(a.DistanceFromEarth / 1000000m), 2)).ToArray()
+			}
+		};
+
+		_velocitySeries = new List<ChartSeries>
+		{
+			new ChartSeries
+			{
+				Name = "Velocity",
+				Data = closestAsteroids.Select(a => Math.Round((double)(a.Velocity), 2)).ToArray()
 			}
 		};
 	}
