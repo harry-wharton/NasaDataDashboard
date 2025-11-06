@@ -51,6 +51,13 @@
 	</MudCardContent>
 </MudCard>
 
+@if (!_loading && _filteredAsteroids.Any())
+{
+	<MudAlert Severity="Severity.Info" Class="mb-4">
+		Showing @_filteredAsteroids.Count of @_asteroids.Count asteroids
+	</MudAlert>
+}
+
 @if (_loading)
 {
 	<MudProgressLinear Indeterminate="true" />
@@ -97,7 +104,14 @@
 
 	private bool _loading = true;
 	private List<Data.Objects.AsteroidData> _asteroids = new();
+	private List<Data.Objects.AsteroidData> _filteredAsteroids = new();
 	private string[] _xAxisLabels = Array.Empty<string>();
+
+	private double _minDistance = 0;
+	private double _maxDistance = 100;
+	private double _minVelocity = 0;
+	private double _maxVelocity = 100000;
+	private string _searchString = "";
 
 	private ChartOptions _chartOptions = new ChartOptions()
 	{
@@ -108,13 +122,6 @@
 		YAxisFormat = "N2",
 		ShowLegend = false // Hide the legend since we have custom labels
 	};
-
-	private List<Data.Objects.AsteroidData> _filteredAsteroids = new();
-	private double _minDistance = 0;
-	private double _maxDistance = 100;
-	private double _minVelocity = 0;
-	private double _maxVelocity = 100000;
-	private string _searchString = "";
 
 	protected override async Task OnInitializedAsync()
 	{
