@@ -3,6 +3,54 @@
 <PageTitle>Dashboard</PageTitle>
 
 <MudText Typo="Typo.h3" Class="mb-4 text-center font-weight-bold">Near-Earth Object Tracker</MudText>
+
+<MudCard Class="mb-4">
+	<MudCardContent>
+		<MudGrid>
+			<MudItem xs="12" md="4">
+				<MudTextField @bind-Value="_searchString" 
+							  Label="Search by Name or ID" 
+							  Variant="Variant.Outlined"
+							  Adornment="Adornment.Start" 
+							  AdornmentIcon="@Icons.Material.Filled.Search" />
+			</MudItem>
+			<MudItem xs="12" md="4">
+				<MudNumericField @bind-Value="_minDistance" 
+								 Label="Min Distance (M km)" 
+								 Variant="Variant.Outlined" 
+								 Min="0" />
+			</MudItem>
+			<MudItem xs="12" md="4">
+				<MudNumericField @bind-Value="_maxDistance" 
+								 Label="Max Distance (M km)" 
+								 Variant="Variant.Outlined" 
+								 Min="0" />
+			</MudItem>
+			<MudItem xs="12" md="4">
+				<MudNumericField @bind-Value="_minVelocity" 
+								 Label="Min Velocity (km/h)" 
+								 Variant="Variant.Outlined" 
+								 Min="0" />
+			</MudItem>
+			<MudItem xs="12" md="4">
+				<MudNumericField @bind-Value="_maxVelocity" 
+								 Label="Max Velocity (km/h)" 
+								 Variant="Variant.Outlined" 
+								 Min="0" />
+			</MudItem>
+			<MudItem xs="12" md="4" Class="d-flex align-center">
+				<MudButton Variant="Variant.Filled" 
+						   Color="Color.Primary" 
+						   OnClick="ApplyFilters" 
+						   FullWidth="true"
+						   StartIcon="@Icons.Material.Filled.FilterAlt">
+					Apply Filters
+				</MudButton>
+			</MudItem>
+		</MudGrid>
+	</MudCardContent>
+</MudCard>
+
 @if (_loading)
 {
 	<MudProgressLinear Indeterminate="true" />
@@ -61,21 +109,34 @@
 		ShowLegend = false // Hide the legend since we have custom labels
 	};
 
+	private List<Data.Objects.AsteroidData> _filteredAsteroids = new();
+	private double _minDistance = 0;
+	private double _maxDistance = 100;
+	private double _minVelocity = 0;
+	private double _maxVelocity = 100000;
+	private string _searchString = "";
+
 	protected override async Task OnInitializedAsync()
 	{
 		_asteroids = await nasaApiService.GetNeoAsync();
+		_filteredAsteroids = _asteroids;
 		_loading = false;
 
-		// Sort by distance and take the 10 closest asteroids
-		var closestAsteroids = _asteroids
+		UpdateCharts();
+	}
+
+	private void UpdateCharts()
+	{
+		// Sort by distance and take the 10 closest from filtered results
+		var closestAsteroids = _filteredAsteroids
 			.OrderBy(a => a.DistanceFromEarth)
 			.Take(10)
 			.ToList();
 
-		// Create x axis labels using asteroid IDs
+		// Create x axis labels
 		_xAxisLabels = closestAsteroids.Select(a => a.Id).ToArray();
 
-		// Create chart data, convert distance from km to millions of km
+		// Create distance chart data
 		_distanceSeries = new List<ChartSeries>
 		{
 			new ChartSeries
@@ -85,6 +146,7 @@
 			}
 		};
 
+		// Create velocity chart data
 		_velocitySeries = new List<ChartSeries>
 		{
 			new ChartSeries
@@ -93,5 +155,38 @@
 				Data = closestAsteroids.Select(a => Math.Round((double)(a.Velocity), 2)).ToArray()
 			}
 		};
+
+		StateHasChanged(); // Force UI to re-render
 	}
+
+	private void ApplyFilters()
+	{
+		_filteredAsteroids = _asteroids;
+
+		// Filter by search string (name or ID)
+		if (!string.IsNullOrWhiteSpace(_searchString))
+		{
+			_filteredAsteroids = _filteredAsteroids.Where(a => a.Name
+				.Contains(_searchString, StringComparison.OrdinalIgnoreCase) 
+				|| a.Id.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+				.ToList();
+		}
+
+		// Filter by distance range (convert to millions of km)
+		_filteredAsteroids = _filteredAsteroids
+			.Where(a =>
+			{
+				var distanceInMillions = (double)(a.DistanceFromEarth / 1000000m);
+				return distanceInMillions >= _minDistance && distanceInMillions <= _maxDistance;
+			})
+			.ToList();
+
+		// Filter by velocity range
+		_filteredAsteroids = _filteredAsteroids
+			.Where(a => (double)a.Velocity >= _minVelocity && (double)a.Velocity <= _maxVelocity)
+			.ToList();
+
+		UpdateCharts();
+	}
+
 }
