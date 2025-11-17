@@ -29,24 +29,35 @@
             padding: 16px;
             border-radius: 8px;
             color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
         .controls {
-            top: 16px;
+            top: 80px;
             left: 16px;
             min-width: 256px;
         }
 
         .info {
-            top: 16px;
+            top: 80px;
             right: 16px;
-            min-width: 288px;
+            min-width: 320px;
             display: none;
         }
 
         .legend {
             bottom: 16px;
             left: 16px;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            font-size: 18px;
         }
 
         button {
@@ -59,6 +70,7 @@
             cursor: pointer;
             font-size: 14px;
             transition: background 0.2s;
+            font-weight: 500;
         }
 
             button:hover {
@@ -68,6 +80,7 @@
         input[type="range"] {
             width: 100%;
             margin-top: 4px;
+            cursor: pointer;
         }
 
         .space-y-2 > * + * {
@@ -93,29 +106,38 @@
         .border-t {
             border-top: 1px solid #374151;
             padding-top: 8px;
+            margin-top: 8px;
         }
 
         h3 {
             color: #60a5fa;
             margin-bottom: 12px;
+            font-size: 18px;
+            font-weight: 600;
         }
 
         .data-row {
             display: flex;
             justify-content: space-between;
             margin: 8px 0;
+            padding: 4px 0;
         }
+
+            .data-row:not(:last-child) {
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+            }
 
         .close-btn {
             background: none;
             width: auto;
-            padding: 0;
+            padding: 4px 8px;
             font-size: 18px;
             color: #9ca3af;
         }
 
             .close-btn:hover {
                 color: white;
+                background: rgba(255,255,255,0.1);
             }
 
         .legend-item {
@@ -130,13 +152,45 @@
             border-radius: 50%;
             margin-right: 8px;
         }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-normal {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+        }
+
+        .status-hazard {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+
+        .stats {
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
     <div id="container"></div>
+    <div class="loading" id="loading">Initializing 3D environment...</div>
 
-    <div class="controls space-y-3">
-        <h3>3D Asteroid Orbits</h3>
+    <div class="controls space-y-3" style="display: none;" id="controls">
+        <h3>🌌 3D Asteroid Orbits</h3>
+        <div class="stats text-xs">
+            <div class="data-row" style="border: none; margin: 4px 0;">
+                <span class="text-gray-400">Total Objects:</span>
+                <span id="totalCount">0</span>
+            </div>
+        </div>
         <div class="space-y-2">
             <button id="pauseBtn">⏸ Pause</button>
             <div>
@@ -147,13 +201,16 @@
         <div class="text-xs text-gray-400 border-t">
             <p>• Move mouse to rotate view</p>
             <p>• Click asteroids for details</p>
-            <p>• Explore dynamic orbits</p>
+            <p>• Real NASA NEO data</p>
         </div>
     </div>
 
     <div class="info" id="asteroidInfo">
         <div style="display: flex; justify-between; align-items: start; margin-bottom: 12px;">
-            <h3 id="asteroidName"></h3>
+            <div>
+                <h3 id="asteroidName" style="margin-bottom: 4px;"></h3>
+                <div id="asteroidStatus"></div>
+            </div>
             <button class="close-btn" id="closeInfo">✕</button>
         </div>
         <div class="space-y-2 text-sm" id="asteroidData"></div>
@@ -165,14 +222,26 @@
             <span>Earth</span>
         </div>
         <div class="legend-item">
-            <div class="legend-dot" style="background: #f97316;"></div>
-            <span>Near-Earth Objects</span>
+            <div class="legend-dot" style="background: #22c55e;"></div>
+            <span>Safe NEOs</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #ef4444;"></div>
+            <span>Potentially Hazardous</span>
         </div>
     </div>
 
     <script>
         let scene, camera, renderer, asteroids = [], isPaused = false, speed = 1;
-        let earth, mouseX = 0, mouseY = 0;
+        let earth, mouseX = 0, mouseY = 0, realAsteroidData = [];
+
+        // Listen for data from parent window
+        window.addEventListener('message', function (event) {
+            if (event.data && event.data.type === 'asteroidData') {
+                realAsteroidData = event.data.data;
+                initializeWithRealData();
+            }
+        });
 
         function init() {
             // Scene
@@ -225,20 +294,20 @@
             const glowMat = new THREE.ShaderMaterial({
                 uniforms: { c: { value: 0.4 }, p: { value: 3.5 } },
                 vertexShader: `
-                    varying vec3 vNormal;
-                    void main() {
-                        vNormal = normalize(normalMatrix * normal);
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
+                        varying vec3 vNormal;
+                        void main() {
+                            vNormal = normalize(normalMatrix * normal);
+                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                        }
+                    `,
                 fragmentShader: `
-                    uniform float c; uniform float p;
-                    varying vec3 vNormal;
-                    void main() {
-                        float intensity = pow(c - dot(vNormal, vec3(0.0, 0.0, 1.0)), p);
-                        gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
-                    }
-                `,
+                        uniform float c; uniform float p;
+                        varying vec3 vNormal;
+                        void main() {
+                            float intensity = pow(c - dot(vNormal, vec3(0.0, 0.0, 1.0)), p);
+                            gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
+                        }
+                    `,
                 side: THREE.BackSide,
                 blending: THREE.AdditiveBlending,
                 transparent: true
@@ -257,9 +326,6 @@
             point.position.set(500, 200, 500);
             scene.add(point);
 
-            // Create asteroids
-            createAsteroids(30);
-
             // Event listeners
             window.addEventListener('mousemove', onMouseMove);
             window.addEventListener('resize', onResize);
@@ -269,6 +335,95 @@
             document.getElementById('closeInfo').addEventListener('click', closeInfo);
 
             animate();
+        }
+
+        function initializeWithRealData() {
+            // Clear loading message
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('controls').style.display = 'block';
+
+            // Update total count
+            document.getElementById('totalCount').textContent = realAsteroidData.length;
+
+            // Create asteroids from real NASA data
+            realAsteroidData.forEach((data, index) => {
+                createAsteroidFromData(data, index);
+            });
+
+            console.log(`Loaded ${realAsteroidData.length} asteroids from NASA API`);
+        }
+
+        function createAsteroidFromData(data, index) {
+            // Scale distance for visualization (NASA distances are huge)
+            // Distance is in millions of km, we'll scale it for visual purposes
+            const visualDistance = Math.min(Math.max(data.distance * 3, 50), 280);
+
+            // Calculate orbital speed (closer = faster)
+            const orbitalSpeed = 0.001 + (1 / (data.distance + 1)) * 0.002;
+
+            // Size based on actual data or velocity as proxy
+            const visualSize = Math.min(Math.max(data.size || (data.velocity / 20000), 0.8), 4);
+
+            // Color based on hazard status or distance
+            let color;
+            if (data.isPotentiallyHazardous) {
+                color = new THREE.Color(0xef4444); // Red for hazardous
+            } else {
+                // Green to yellow gradient based on distance
+                const hue = Math.min(data.distance / 50, 1) * 0.3; // 0.3 = green, 0 = yellow
+                color = new THREE.Color().setHSL(hue, 0.7, 0.5);
+            }
+
+            // Create irregular asteroid shape
+            const geo = new THREE.DodecahedronGeometry(visualSize, 0);
+            const pos = geo.attributes.position.array;
+            for (let j = 0; j < pos.length; j += 3) {
+                pos[j] *= 0.7 + Math.random() * 0.6;
+                pos[j + 1] *= 0.7 + Math.random() * 0.6;
+                pos[j + 2] *= 0.7 + Math.random() * 0.6;
+            }
+            geo.computeVertexNormals();
+
+            const mat = new THREE.MeshPhongMaterial({
+                color: color,
+                shininess: 10,
+                flatShading: true,
+                emissive: color,
+                emissiveIntensity: data.isPotentiallyHazardous ? 0.4 : 0.2
+            });
+
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = true;
+            scene.add(mesh);
+
+            // Orbit trail
+            const trailPositions = new Array(100).fill(0).map(() => new THREE.Vector3(0, 0, 0));
+            const trailGeo = new THREE.BufferGeometry();
+            const trailPos = new Float32Array(trailPositions.length * 3);
+            trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
+            const trailMat = new THREE.LineBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: data.isPotentiallyHazardous ? 0.5 : 0.3,
+                linewidth: 2
+            });
+            const trail = new THREE.Line(trailGeo, trailMat);
+            scene.add(trail);
+
+            asteroids.push({
+                mesh,
+                trail,
+                trailPositions,
+                data: {
+                    ...data,
+                    visualDistance: visualDistance,
+                    visualSize: visualSize
+                },
+                angle: (index / realAsteroidData.length) * Math.PI * 2, // Spread them out
+                distance: visualDistance,
+                speed: orbitalSpeed,
+                tilt: (Math.random() - 0.5) * 40 // Orbital inclination
+            });
         }
 
         function createEarthTexture() {
@@ -293,64 +448,10 @@
             return new THREE.CanvasTexture(canvas);
         }
 
-        function createAsteroids(count) {
-            for (let i = 0; i < count; i++) {
-                const data = {
-                    id: `AST-${i + 1}`,
-                    name: `Asteroid ${i + 1}`,
-                    distance: 80 + Math.random() * 180,
-                    velocity: (5000 + Math.random() * 45000).toFixed(0),
-                    size: 0.5 + Math.random() * 3,
-                    speed: 0.0005 + Math.random() * 0.002,
-                    tilt: (Math.random() - 0.5) * 60,
-                    color: Math.floor(Math.random() * 60 + 15)
-                };
-
-                const geo = new THREE.DodecahedronGeometry(data.size, 0);
-                const pos = geo.attributes.position.array;
-                for (let j = 0; j < pos.length; j += 3) {
-                    pos[j] *= 0.7 + Math.random() * 0.6;
-                    pos[j + 1] *= 0.7 + Math.random() * 0.6;
-                    pos[j + 2] *= 0.7 + Math.random() * 0.6;
-                }
-                geo.computeVertexNormals();
-
-                const colorHSL = new THREE.Color().setHSL(data.color / 360, 0.7, 0.5);
-                const mat = new THREE.MeshPhongMaterial({
-                    color: colorHSL,
-                    shininess: 10,
-                    flatShading: true,
-                    emissive: colorHSL,
-                    emissiveIntensity: 0.2
-                });
-
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.castShadow = true;
-                scene.add(mesh);
-
-                // Trail
-                const trailPositions = new Array(100).fill(0).map(() => new THREE.Vector3(0, 0, 0));
-                const trailGeo = new THREE.BufferGeometry();
-                const trailPos = new Float32Array(trailPositions.length * 3);
-                trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
-                const trailMat = new THREE.LineBasicMaterial({ color: colorHSL, transparent: true, opacity: 0.3 });
-                const trail = new THREE.Line(trailGeo, trailMat);
-                scene.add(trail);
-
-                asteroids.push({
-                    mesh, trail, trailPositions, data,
-                    angle: Math.random() * Math.PI * 2,
-                    distance: data.distance,
-                    speed: data.speed,
-                    tilt: data.tilt
-                });
-            }
-        }
-
         function animate() {
             requestAnimationFrame(animate);
 
-            if (!isPaused) {
+            if (!isPaused && asteroids.length > 0) {
                 earth.rotation.y += 0.001 * speed;
 
                 asteroids.forEach(ast => {
@@ -405,12 +506,34 @@
         function showAsteroidInfo(data) {
             const info = document.getElementById('asteroidInfo');
             document.getElementById('asteroidName').textContent = data.name;
+
+            const statusHtml = data.isPotentiallyHazardous
+                ? '<span class="status-badge status-hazard">⚠️ POTENTIALLY HAZARDOUS</span>'
+                : '<span class="status-badge status-normal">✓ Safe Approach</span>';
+            document.getElementById('asteroidStatus').innerHTML = statusHtml;
+
             document.getElementById('asteroidData').innerHTML = `
-                <div class="data-row"><span class="text-gray-400">ID:</span><span>${data.id}</span></div>
-                <div class="data-row"><span class="text-gray-400">Distance:</span><span>${(data.distance / 10).toFixed(2)} M km</span></div>
-                <div class="data-row"><span class="text-gray-400">Velocity:</span><span>${data.velocity} km/h</span></div>
-                <div class="data-row"><span class="text-gray-400">Size:</span><span>${data.size.toFixed(1)} km</span></div>
-            `;
+                    <div class="data-row">
+                        <span class="text-gray-400">NEO ID:</span>
+                        <span style="font-family: monospace;">${data.id}</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-gray-400">Distance from Earth:</span>
+                        <span><strong>${data.distance.toFixed(2)}</strong> M km</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-gray-400">Relative Velocity:</span>
+                        <span><strong>${data.velocity.toLocaleString()}</strong> km/h</span>
+                    </div>
+                    <div class="data-row">
+                        <span class="text-gray-400">Estimated Size:</span>
+                        <span>${data.visualSize.toFixed(1)} km</span>
+                    </div>
+                    <div class="data-row" style="border: none;">
+                        <span class="text-gray-400">Orbital Distance:</span>
+                        <span>${data.visualDistance.toFixed(0)} units</span>
+                    </div>
+                `;
             info.style.display = 'block';
         }
 
@@ -434,6 +557,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+        // Initialize scene
         init();
     </script>
 </body>
