@@ -50,9 +50,8 @@
                     name = a.Name,
                     distance = (double)(a.DistanceFromEarth / 1000000m), // Convert to millions of km
                     velocity = (double)a.Velocity,
-                    // Calculate size based on estimated diameter (you may need to add this to your AsteroidData model)
-                    size = 1.5, // Default size, adjust based on your data
-                    isPotentiallyHazardous = false // Add this field to your model if available
+                    size = 1.5, // Default size, adjust based on data
+                    isPotentiallyHazardous = false
                 }).ToList();
 
                 // Send data to iframe
