@@ -1,17 +1,16 @@
-﻿namespace NasaDataDashboard.Data.Objects
+﻿using System.Text.Json.Serialization;
+
+namespace NasaDataDashboard.Data.Objects
 {
-    public class Vector3D
+    public class Vector3d
     {
-        public struct Vector3d
-        {
-            public decimal X;
-            public decimal Y;
-            public decimal Z;
+        [JsonPropertyName("x")]
+        public decimal X { get; set; }
 
-            public Vector3d(decimal x, decimal y, decimal z) { X = x; Y = y; Z = z; }
+        [JsonPropertyName("y")]
+        public decimal Y { get; set; }
 
-            public override string ToString() => $"({X}, {Y}, {Z})";
-        }
-
+        [JsonPropertyName("z")]
+        public decimal Z { get; set; }
     }
 }

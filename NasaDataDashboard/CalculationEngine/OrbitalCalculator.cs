@@ -1,5 +1,5 @@
 ﻿using NasaDataDashboard.Data.Objects;
-using static NasaDataDashboard.Data.Objects.Vector3D;
+using static NasaDataDashboard.Data.Objects.Vector3d;
 
 namespace NasaDataDashboard.CalculationEngine
 {
@@ -140,8 +140,8 @@ namespace NasaDataDashboard.CalculationEngine
                 (decimal)(sinW * sinI) * xOrb +
                 (decimal)(cosW * sinI) * yOrb;
 
-            return (new Vector3d(x, y, z), r);
-        }
+            return (new Vector3d { X = x, Y = y, Z = z }, r);
+        }   
 
         // Position at time in Unix ms
         public static Vector3d PositionAtUnixMilliseconds(AsteroidWithOrbitalData elements, decimal unixMs)

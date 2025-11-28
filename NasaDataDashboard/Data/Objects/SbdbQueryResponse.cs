@@ -10,7 +10,7 @@ namespace NasaDataDashboard.Data.Objects
 		public Signature Signature { get; set; }
 
 		[JsonPropertyName("count")]
-		public string Count { get; set; }
+		public int Count { get; set; }
 
 		[JsonPropertyName("fields")]
 		public List<string> Fields { get; set; }
