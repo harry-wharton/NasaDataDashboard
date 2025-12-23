@@ -47,7 +47,7 @@ export function renderAsteroids(visualData) {
         sunLight.position.set(0, 0, 0);
         scene.add(sunLight);
 
-        // Add a visible Sun at origin
+        // Add a Sun at origin
         const sunGeometry = new THREE.SphereGeometry(0.5, 32, 32);
         const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
         const sun = new THREE.Mesh(sunGeometry, sunMaterial);
@@ -70,13 +70,13 @@ export function renderAsteroids(visualData) {
 
     console.log("Processing", visualData.length, "asteroids");
 
-    // Calculate bounds - handle both lowercase and uppercase property names
+    // Calculate bounds
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
     let minZ = Infinity, maxZ = -Infinity;
 
     visualData.forEach(ast => {
-        // Try both lowercase (JSON) and uppercase (C#) property names
+        
         const pos = ast.position || ast.Position;
         if (!pos) {
             console.warn("No position data for asteroid:", ast);
@@ -136,7 +136,7 @@ export function renderAsteroids(visualData) {
         const scaledY = y * scaleFactor;
         const scaledZ = z * scaleFactor;
 
-        // Get size - handle both property name cases
+        // Get size
         const size = Math.max(0.05, Number(ast.size || ast.Size) * 10);
 
         const geometry = new THREE.SphereGeometry(size, 16, 16);

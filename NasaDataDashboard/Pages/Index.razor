@@ -17,34 +17,35 @@
 							  AdornmentIcon="@Icons.Material.Filled.Search" />
 			</MudItem>
 			<MudItem xs="12" md="4">
-				<MudNumericField @bind-Value="_minDistance" 
-								 Label="Min Distance (M km)" 
-								 Variant="Variant.Outlined" 
-								 Min="0" />
+				<MudSelect @bind-Value="_distanceRange" 
+						   Label="Distance Range" 
+						   Variant="Variant.Outlined"
+						   AnchorOrigin="Origin.BottomCenter">
+					<MudSelectItem Value="@("all")">All Distances</MudSelectItem>
+					<MudSelectItem Value="@("0-1")">Very Close (0-1 M km)</MudSelectItem>
+					<MudSelectItem Value="@("1-5")">Close (1-5 M km)</MudSelectItem>
+					<MudSelectItem Value="@("5-10")">Near (5-10 M km)</MudSelectItem>
+					<MudSelectItem Value="@("10-50")">Moderate (10-50 M km)</MudSelectItem>
+					<MudSelectItem Value="@("50-100")">Far (50-100 M km)</MudSelectItem>
+				</MudSelect>
 			</MudItem>
 			<MudItem xs="12" md="4">
-				<MudNumericField @bind-Value="_maxDistance" 
-								 Label="Max Distance (M km)" 
-								 Variant="Variant.Outlined" 
-								 Min="0" />
+				<MudSelect @bind-Value="_velocityRange" 
+						   Label="Velocity Range" 
+						   Variant="Variant.Outlined"
+						   AnchorOrigin="Origin.BottomCenter">
+					<MudSelectItem Value="@("all")">All Velocities</MudSelectItem>
+					<MudSelectItem Value="@("0-10000")">Slow (0-10,000 km/h)</MudSelectItem>
+					<MudSelectItem Value="@("10000-30000")">Moderate (10,000-30,000 km/h)</MudSelectItem>
+					<MudSelectItem Value="@("30000-60000")">Fast (30,000-60,000 km/h)</MudSelectItem>
+					<MudSelectItem Value="@("60000-100000")">Very Fast (60,000-100,000 km/h)</MudSelectItem>
+					<MudSelectItem Value="@("100000-200000")">Extremely Fast (100,000+ km/h)</MudSelectItem>
+				</MudSelect>
 			</MudItem>
-			<MudItem xs="12" md="4">
-				<MudNumericField @bind-Value="_minVelocity" 
-								 Label="Min Velocity (km/h)" 
-								 Variant="Variant.Outlined" 
-								 Min="0" />
-			</MudItem>
-			<MudItem xs="12" md="4">
-				<MudNumericField @bind-Value="_maxVelocity" 
-								 Label="Max Velocity (km/h)" 
-								 Variant="Variant.Outlined" 
-								 Min="0" />
-			</MudItem>
-			<MudItem xs="12" md="4" Class="d-flex align-center">
+			<MudItem xs="12" Class="d-flex align-center justify-center">
 				<MudButton Variant="Variant.Filled" 
 						   Color="Color.Primary" 
 						   OnClick="ApplyFilters" 
-						   FullWidth="true"
 						   StartIcon="@Icons.Material.Filled.FilterAlt">
 					Apply Filters
 				</MudButton>
@@ -109,10 +110,8 @@
 	private List<Data.Objects.AsteroidData> _filteredAsteroids = new();
 	private string[] _xAxisLabels = Array.Empty<string>();
 
-	private double _minDistance = 0;
-	private double _maxDistance = 100;
-	private double _minVelocity = 0;
-	private double _maxVelocity = 100000;
+	private string _distanceRange = "all";
+	private string _velocityRange = "all";
 	private string _searchString = "";
 
 	private ChartOptions _chartOptions = new ChartOptions()
@@ -122,7 +121,7 @@
 		XAxisLines = true,
 		InterpolationOption = InterpolationOption.Straight,
 		YAxisFormat = "N2",
-		ShowLegend = false // Hide the legend since we have custom labels
+		ShowLegend = false
 	};
 
 	protected override async Task OnInitializedAsync()
@@ -136,16 +135,13 @@
 
 	private void UpdateCharts()
 	{
-		// Sort by distance and take the 10 closest from filtered results
 		var closestAsteroids = _filteredAsteroids
 			.OrderBy(a => a.DistanceFromEarth)
 			.Take(10)
 			.ToList();
 
-		// Create x axis labels
 		_xAxisLabels = closestAsteroids.Select(a => a.Id).ToArray();
 
-		// Create distance chart data
 		_distanceSeries = new List<ChartSeries>
 		{
 			new ChartSeries
@@ -155,7 +151,6 @@
 			}
 		};
 
-		// Create velocity chart data
 		_velocitySeries = new List<ChartSeries>
 		{
 			new ChartSeries
@@ -165,7 +160,7 @@
 			}
 		};
 
-		StateHasChanged(); // Force UI to re-render
+		StateHasChanged();
 	}
 
 	private void ApplyFilters()
@@ -181,21 +176,34 @@
 				.ToList();
 		}
 
-		// Filter by distance range (convert to millions of km)
-		_filteredAsteroids = _filteredAsteroids
-			.Where(a =>
-			{
-				var distanceInMillions = (double)(a.DistanceFromEarth / 1000000m);
-				return distanceInMillions >= _minDistance && distanceInMillions <= _maxDistance;
-			})
-			.ToList();
+		// Filter by distance range
+		if (_distanceRange != "all")
+		{
+			var parts = _distanceRange.Split('-');
+			var min = double.Parse(parts[0]);
+			var max = double.Parse(parts[1]);
+			
+			_filteredAsteroids = _filteredAsteroids
+				.Where(a =>
+				{
+					var distanceInMillions = (double)(a.DistanceFromEarth / 1000000m);
+					return distanceInMillions >= min && distanceInMillions <= max;
+				})
+				.ToList();
+		}
 
 		// Filter by velocity range
-		_filteredAsteroids = _filteredAsteroids
-			.Where(a => (double)a.Velocity >= _minVelocity && (double)a.Velocity <= _maxVelocity)
-			.ToList();
+		if (_velocityRange != "all")
+		{
+			var parts = _velocityRange.Split('-');
+			var min = double.Parse(parts[0]);
+			var max = double.Parse(parts[1]);
+			
+			_filteredAsteroids = _filteredAsteroids
+				.Where(a => (double)a.Velocity >= min && (double)a.Velocity <= max)
+				.ToList();
+		}
 
 		UpdateCharts();
 	}
-
 }
