@@ -32,10 +32,11 @@ namespace NasaDataDashboard.Data.Services
 
             try
             {
-                var today = DateTime.Now.ToString("yyyy-MM-dd");
+                var startDate = DateTime.UtcNow.AddDays(-6).ToString("yyyy-MM-dd");
+                var endDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
                 var response = await _httpClient.GetAsync(
-                    $"neo/rest/v1/feed?start_date={today}&end_date={today}&api_key={_apiKey}"
+                    $"neo/rest/v1/feed?start_date={startDate}&end_date={endDate}&api_key={_apiKey}"
                 );
 
                 if (response.IsSuccessStatusCode)

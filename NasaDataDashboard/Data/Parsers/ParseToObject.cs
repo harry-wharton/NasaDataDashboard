@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using NasaDataDashboard.Data.Objects;
 
 namespace NasaDataDashboard.Data.Parsers
@@ -9,66 +10,58 @@ namespace NasaDataDashboard.Data.Parsers
         {
             var asteroidList = new List<AsteroidData>();
 
-            try
+            if (!json.RootElement.TryGetProperty("near_earth_objects", out JsonElement nearEarthObjects))
+                return asteroidList;
+
+            foreach (JsonProperty dateProperty in nearEarthObjects.EnumerateObject())
             {
-                // Navigate through json and map to asteroid data obj
-                if (json.RootElement.TryGetProperty("near_earth_objects", out JsonElement nearEarthObjects))
+                foreach (JsonElement asteroid in dateProperty.Value.EnumerateArray())
                 {
-                    // Iterate through each date in near_earth_objects
-                    foreach (JsonProperty dateProperty in nearEarthObjects.EnumerateObject())
+                    try
                     {
-                        // Each date contains an array of asteroids
-                        foreach (JsonElement asteroid in dateProperty.Value.EnumerateArray())
+                        // Find Earth close approach (if any)
+                        var closeApproach = asteroid
+                            .GetProperty("close_approach_data")
+                            .EnumerateArray()
+                            .FirstOrDefault(ca =>
+                                ca.GetProperty("orbiting_body").GetString() == "Earth");
+
+                        if (closeApproach.ValueKind == JsonValueKind.Undefined)
+                            continue;
+
+                        var distanceKm = decimal.Parse(
+                            closeApproach.GetProperty("miss_distance")
+                                .GetProperty("kilometers")
+                                .GetString() ?? "0",
+                            CultureInfo.InvariantCulture);
+
+                        var velocityKmh = decimal.Parse(
+                            closeApproach.GetProperty("relative_velocity")
+                                .GetProperty("kilometers_per_hour")
+                                .GetString() ?? "0",
+                            CultureInfo.InvariantCulture);
+
+                        asteroidList.Add(new AsteroidData
                         {
-                            try
-                            {
-                                // Get distance as string first
-                                var distanceString = asteroid
-                                    .GetProperty("close_approach_data")[0]
-                                    .GetProperty("miss_distance")
-                                    .GetProperty("kilometers")
-                                    .GetString();
+                            Id = asteroid.GetProperty("id").GetString() ?? "Unknown",
+                            Name = asteroid.GetProperty("name").GetString() ?? "Unknown",
+                            IsHazardous = asteroid.GetProperty("is_potentially_hazardous_asteroid").GetBoolean(),
 
-                                var asteroidData = new AsteroidData
-                                {
-                                    // Get name and ID of the asteroid
-                                    Id = asteroid.GetProperty("id").GetString() ?? "Unknown",
-                                    Name = asteroid.GetProperty("name").GetString() ?? "Unknown",
+                            Diameter = asteroid
+                                .GetProperty("estimated_diameter")
+                                .GetProperty("meters")
+                                .GetProperty("estimated_diameter_min")
+                                .GetDecimal(),
 
-                                    // Get is hazard bool
-                                    IsHazardous = asteroid.GetProperty("is_potentially_hazardous_asteroid").GetBoolean(),
-
-                                    // Get min diameter in meters
-                                    Diameter = asteroid
-                                        .GetProperty("estimated_diameter")
-                                        .GetProperty("meters")
-                                        .GetProperty("estimated_diameter_min")
-                                        .GetDecimal(),
-
-                                    // Get relative velocity in mph
-                                    Velocity = decimal.Parse(asteroid
-										.GetProperty("close_approach_data")[0]
-										.GetProperty("relative_velocity")
-										.GetProperty("miles_per_hour")
-                                        .GetString()),
-
-                                    // Parse distance string to decimal
-                                    DistanceFromEarth = decimal.Parse(distanceString ?? "0")
-                                };
-
-                                asteroidList.Add(asteroidData);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error parsing individual asteroid: {ex.Message}");
-                            }
-                        }
+                            DistanceFromEarth = distanceKm,
+                            Velocity = velocityKmh
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error parsing asteroid: {ex.Message}");
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error parsing JSON: {ex.Message}");
             }
 
             return asteroidList;
