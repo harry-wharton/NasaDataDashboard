@@ -67,15 +67,56 @@
 	<MudShimmer Lines="6" />
 } else
 {
+	<!-- Summary Statistics Cards -->
+	<MudGrid Class="mb-4">
+		<MudItem xs="12" sm="6" md="3">
+			<MudCard Elevation="2">
+				<MudCardContent>
+					<MudText Typo="Typo.h6" Color="Color.Primary">Total NEOs</MudText>
+					<MudText Typo="Typo.h3">@_filteredAsteroids.Count</MudText>
+					<MudText Typo="Typo.body2" Color="Color.Secondary">Tracked Objects</MudText>
+				</MudCardContent>
+			</MudCard>
+		</MudItem>
+		<MudItem xs="12" sm="6" md="3">
+			<MudCard Elevation="2">
+				<MudCardContent>
+					<MudText Typo="Typo.h6" Color="Color.Warning">Potentially Hazardous</MudText>
+					<MudText Typo="Typo.h3">@_hazardousCount</MudText>
+					<MudText Typo="Typo.body2" Color="Color.Secondary">@_hazardousPercentage% of Total</MudText>
+				</MudCardContent>
+			</MudCard>
+		</MudItem>
+		<MudItem xs="12" sm="6" md="3">
+			<MudCard Elevation="2">
+				<MudCardContent>
+					<MudText Typo="Typo.h6" Color="Color.Info">Closest Approach</MudText>
+					<MudText Typo="Typo.h3">@_closestDistance</MudText>
+					<MudText Typo="Typo.body2" Color="Color.Secondary">Million km</MudText>
+				</MudCardContent>
+			</MudCard>
+		</MudItem>
+		<MudItem xs="12" sm="6" md="3">
+			<MudCard Elevation="2">
+				<MudCardContent>
+					<MudText Typo="Typo.h6" Color="Color.Success">Avg Velocity</MudText>
+					<MudText Typo="Typo.h3">@_avgVelocity</MudText>
+					<MudText Typo="Typo.body2" Color="Color.Secondary">km/h</MudText>
+				</MudCardContent>
+			</MudCard>
+		</MudItem>
+	</MudGrid>
+
+	<!-- Main Charts -->
 	<MudGrid>
 		<MudItem xs="12" md="6">
 			<MudCard>
-				<MudCardHeader><MudText Typo="Typo.h6">Closest Asteroids</MudText></MudCardHeader>
+				<MudCardHeader><MudText Typo="Typo.h6">Closest Asteroids by Distance</MudText></MudCardHeader>
 				<MudCardContent>
 					<MudChart ChartType="ChartType.Bar"
 					ChartSeries="@_distanceSeries"
 					XAxisLabels="@_xAxisLabels"
-					Height="500px"
+					Height="400px"
 					Width="100%"
 					ChartOptions="_chartOptions" />
 				</MudCardContent>
@@ -84,15 +125,118 @@
 
 		<MudItem xs="12" md="6">
 			<MudCard>
-				<MudCardHeader><MudText Typo="Typo.h6">Asteroid Velocity</MudText></MudCardHeader>
+				<MudCardHeader><MudText Typo="Typo.h6">Asteroid Velocity Distribution</MudText></MudCardHeader>
 					<MudCardContent>
 						<MudChart ChartType="ChartType.Line"
 						ChartSeries="@_velocitySeries"
 						XAxisLabels="@_xAxisLabels"
-						Height="500px"
+						Height="400px"
 						Width="100%"
 						ChartOptions="_chartOptions" />
 					</MudCardContent>
+			</MudCard>
+		</MudItem>
+
+		<MudItem xs="12" md="6">
+			<MudCard>
+				<MudCardHeader><MudText Typo="Typo.h6">Size Distribution</MudText></MudCardHeader>
+				<MudCardContent>
+					<MudChart ChartType="ChartType.Pie"
+					InputData="@_sizeSeries"
+					InputLabels="@_pieLabels"
+					Height="400px"
+					Width="100%" />
+				</MudCardContent>
+			</MudCard>
+		</MudItem>
+
+		<MudItem xs="12" md="6">
+			<MudCard>
+				<MudCardHeader><MudText Typo="Typo.h6">Hazard Assessment</MudText></MudCardHeader>
+				<MudCardContent>
+					<MudChart ChartType="ChartType.Donut"
+					InputData="@_hazardSeries"
+					InputLabels="@_donutLabels"
+					Height="400px"
+					Width="100%"/>
+				</MudCardContent>
+			</MudCard>
+		</MudItem>
+
+		<MudItem xs="12">
+			<MudCard>
+				<MudCardHeader><MudText Typo="Typo.h6">Distance vs Velocity Correlation</MudText></MudCardHeader>
+				<MudCardContent>
+					<MudChart ChartType="ChartType.Line"
+					ChartSeries="@_scatterSeries"
+					XAxisLabels="@_scatterLabels"
+					Height="400px"
+					Width="100%"
+					ChartOptions="_scatterChartOptions" />
+				</MudCardContent>
+			</MudCard>
+		</MudItem>
+
+		<MudItem xs="12" md="6">
+			<MudCard>
+				<MudCardHeader><MudText Typo="Typo.h6">Top 10 Fastest Asteroids</MudText></MudCardHeader>
+				<MudCardContent>
+					<MudSimpleTable Striped="true" Dense="true">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Velocity (km/h)</th>
+								<th>Distance (M km)</th>
+							</tr>
+						</thead>
+						<tbody>
+							@foreach (var asteroid in _fastestAsteroids)
+							{
+								<tr>
+									<td>@asteroid.Name</td>
+									<td>@Math.Round((double)asteroid.Velocity, 0).ToString("N0")</td>
+									<td>@Math.Round((double)(asteroid.DistanceFromEarth / 1000000m), 2)</td>
+								</tr>
+							}
+						</tbody>
+					</MudSimpleTable>
+				</MudCardContent>
+			</MudCard>
+		</MudItem>
+
+		<MudItem xs="12" md="6">
+			<MudCard>
+				<MudCardHeader><MudText Typo="Typo.h6">Largest Asteroids</MudText></MudCardHeader>
+				<MudCardContent>
+					<MudSimpleTable Striped="true" Dense="true">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Diameter (m)</th>
+								<th>Hazardous</th>
+							</tr>
+						</thead>
+						<tbody>
+							@foreach (var asteroid in _largestAsteroids)
+							{
+								<tr>
+									<td>@asteroid.Name</td>
+									<td>@Math.Round((double)asteroid.Diameter, 0).ToString("N0")</td>
+									<td>
+										@if (asteroid.IsHazardous)
+										{
+											<MudChip T="string" Size="Size.Small" Color="Color.Warning">Yes</MudChip>
+										}
+										else
+										{
+											<MudChip T="string" Size="Size.Small" Color="Color.Success">No</MudChip>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</MudSimpleTable>
+				</MudCardContent>
 			</MudCard>
 		</MudItem>
 	</MudGrid>
@@ -104,15 +248,28 @@
 {
 	private List<ChartSeries> _distanceSeries = new();
 	private List<ChartSeries> _velocitySeries = new();
+	private double[] _sizeSeries = [];
+	private string[] _pieLabels = [];
+	private double[] _hazardSeries = [];
+	private string[] _donutLabels = [];
+	private List<ChartSeries> _scatterSeries = new();
+	private string[] _scatterLabels = Array.Empty<string>();
 
 	private bool _loading = true;
 	private List<Data.Objects.AsteroidData> _asteroids = new();
 	private List<Data.Objects.AsteroidData> _filteredAsteroids = new();
+	private List<Data.Objects.AsteroidData> _fastestAsteroids = new();
+	private List<Data.Objects.AsteroidData> _largestAsteroids = new();
 	private string[] _xAxisLabels = Array.Empty<string>();
 
 	private string _distanceRange = "all";
 	private string _velocityRange = "all";
 	private string _searchString = "";
+
+	private int _hazardousCount = 0;
+	private string _hazardousPercentage = "0";
+	private string _closestDistance = "0";
+	private string _avgVelocity = "0";
 
 	private ChartOptions _chartOptions = new ChartOptions()
 	{
@@ -124,6 +281,26 @@
 		ShowLegend = false
 	};
 
+	private ChartOptions _pieChartOptions = new ChartOptions()
+	{
+		ShowLegend = true
+	};
+
+	private ChartOptions _donutChartOptions = new ChartOptions()
+	{
+		ShowLegend = true
+	};
+
+	private ChartOptions _scatterChartOptions = new ChartOptions()
+	{
+		YAxisTicks = 10,
+		YAxisLines = true,
+		XAxisLines = true,
+		InterpolationOption = InterpolationOption.NaturalSpline,
+		YAxisFormat = "N0",
+		ShowLegend = false
+	};
+
 	protected override async Task OnInitializedAsync()
 	{
 		_asteroids = await nasaApiService.GetNeoAsync();
@@ -131,6 +308,33 @@
 		_loading = false;
 
 		UpdateCharts();
+		UpdateStatistics();
+	}
+
+	private void UpdateStatistics()
+	{
+		_hazardousCount = _filteredAsteroids.Count(a => a.IsHazardous);
+		_hazardousPercentage = _filteredAsteroids.Count > 0 
+			? Math.Round((double)_hazardousCount / _filteredAsteroids.Count * 100, 1).ToString("F1")
+			: "0";
+
+		_closestDistance = _filteredAsteroids.Any() 
+			? Math.Round((double)(_filteredAsteroids.Min(a => a.DistanceFromEarth) / 1000000m), 2).ToString("F2")
+			: "0";
+
+		_avgVelocity = _filteredAsteroids.Any()
+			? Math.Round(_filteredAsteroids.Average(a => (double)a.Velocity), 0).ToString("N0")
+			: "0";
+
+		_fastestAsteroids = _filteredAsteroids
+			.OrderByDescending(a => a.Velocity)
+			.Take(10)
+			.ToList();
+
+		_largestAsteroids = _filteredAsteroids
+			.OrderByDescending(a => a.Diameter)
+			.Take(10)
+			.ToList();
 	}
 
 	private void UpdateCharts()
@@ -140,7 +344,7 @@
 			.Take(10)
 			.ToList();
 
-		_xAxisLabels = closestAsteroids.Select(a => a.Id).ToArray();
+		_xAxisLabels = closestAsteroids.Select(a => a.Name).ToArray();
 
 		_distanceSeries = new List<ChartSeries>
 		{
@@ -160,6 +364,56 @@
 			}
 		};
 
+		// Size distribution
+		var small = _filteredAsteroids.Count(a => a.Diameter < 100);
+		var medium = _filteredAsteroids.Count(a => a.Diameter >= 100 && a.Diameter < 500);
+		var large = _filteredAsteroids.Count(a => a.Diameter >= 500 && a.Diameter < 1000);
+		var veryLarge = _filteredAsteroids.Count(a => a.Diameter >= 1000);
+
+		_sizeSeries = [small,
+			medium,
+			large,
+			veryLarge];
+
+		_pieLabels = [
+			"Small (<100m)",
+			"Medium (100-500m)",
+			"Large (500-1000m)",
+			"Very Large (>1000m)"];
+
+		// Hazard distribution
+		var hazardous = _filteredAsteroids.Count(a => a.IsHazardous);
+		var safe = _filteredAsteroids.Count - hazardous;
+
+		_hazardSeries = [hazardous, safe];
+		_donutLabels = [
+			"Potentially Hazardous",
+			"Non-Hazardous"];
+
+		// Distance vs Velocity correlation (scatter-like using sorted data)
+		var correlationData = _filteredAsteroids
+			.OrderBy(a => a.DistanceFromEarth)
+			.Take(50)
+			.ToList();
+
+		_scatterLabels = correlationData
+		.Select(a => $"{Math.Round((double)(a.DistanceFromEarth / 1_000_000m), 1)}M km")
+		.ToArray();
+
+		_scatterSeries = new List<ChartSeries>
+		{
+			new ChartSeries
+			{
+				Name = "Velocity",
+				Data = correlationData.Select(a => Math.Round((double)a.Velocity, 0)).ToArray()
+			}
+		};
+
+		_scatterChartOptions.InterpolationOption =
+		correlationData.Count >= 4
+		? InterpolationOption.NaturalSpline
+		: InterpolationOption.Straight;
+
 		StateHasChanged();
 	}
 
@@ -167,7 +421,6 @@
 	{
 		_filteredAsteroids = _asteroids;
 
-		// Filter by search string (name or ID)
 		if (!string.IsNullOrWhiteSpace(_searchString))
 		{
 			_filteredAsteroids = _filteredAsteroids.Where(a => a.Name
@@ -176,7 +429,6 @@
 				.ToList();
 		}
 
-		// Filter by distance range
 		if (_distanceRange != "all")
 		{
 			var parts = _distanceRange.Split('-');
@@ -192,7 +444,6 @@
 				.ToList();
 		}
 
-		// Filter by velocity range
 		if (_velocityRange != "all")
 		{
 			var parts = _velocityRange.Split('-');
@@ -205,5 +456,6 @@
 		}
 
 		UpdateCharts();
+		UpdateStatistics();
 	}
 }
