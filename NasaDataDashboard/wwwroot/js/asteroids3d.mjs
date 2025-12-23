@@ -4,6 +4,7 @@ import { OrbitControls } from 'https://esm.sh/three@0.152.2/examples/jsm/control
 
 let scene, camera, renderer, controls;
 let asteroidObjects = [];
+let sunMesh = null;
 
 export function renderAsteroids(visualData) {
     console.log("Received asteroids:", visualData);
@@ -47,12 +48,6 @@ export function renderAsteroids(visualData) {
         sunLight.position.set(0, 0, 0);
         scene.add(sunLight);
 
-        // Add a Sun at origin
-        const sunGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-        const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-        const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-        scene.add(sun);
-
         // Add grid for reference
         const gridHelper = new THREE.GridHelper(20, 20);
         scene.add(gridHelper);
@@ -76,7 +71,7 @@ export function renderAsteroids(visualData) {
     let minZ = Infinity, maxZ = -Infinity;
 
     visualData.forEach(ast => {
-        
+
         const pos = ast.position || ast.Position;
         if (!pos) {
             console.warn("No position data for asteroid:", ast);
@@ -109,7 +104,7 @@ export function renderAsteroids(visualData) {
         return;
     }
 
-    // Determine scale factor
+    // Determine scale factor for positions
     const maxDimension = Math.max(
         Math.abs(maxX - minX),
         Math.abs(maxY - minY),
@@ -118,6 +113,35 @@ export function renderAsteroids(visualData) {
 
     const scaleFactor = maxDimension > 0 ? 10 / maxDimension : 1;
     console.log("Scale factor:", scaleFactor, "Max dimension:", maxDimension);
+
+    // Calculate average asteroid size to scale sun appropriately
+    let totalSize = 0;
+    let validSizeCount = 0;
+    visualData.forEach(ast => {
+        const size = Number(ast.size || ast.Size);
+        if (!isNaN(size) && size > 0) {
+            totalSize += size;
+            validSizeCount++;
+        }
+    });
+    const avgAsteroidSize = validSizeCount > 0 ? totalSize / validSizeCount : 0.01;
+
+    // Sun should be proportionally larger than asteroids but visible
+    // Scale sun to be about 20-30x the average asteroid size for visibility
+    const sunRadius = Math.max(0.15, avgAsteroidSize * 25 * scaleFactor);
+
+    // Remove old sun if exists
+    if (sunMesh) {
+        scene.remove(sunMesh);
+    }
+
+    // Add Sun at origin with proportional size
+    const sunGeometry = new THREE.SphereGeometry(sunRadius, 32, 32);
+    const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
+    scene.add(sunMesh);
+
+    console.log("Sun radius:", sunRadius, "Avg asteroid size:", avgAsteroidSize);
 
     // Add new asteroids
     let successCount = 0;
@@ -136,8 +160,10 @@ export function renderAsteroids(visualData) {
         const scaledY = y * scaleFactor;
         const scaledZ = z * scaleFactor;
 
-        // Get size
-        const size = Math.max(0.05, Number(ast.size || ast.Size) * 10);
+        // Get size - use a more conservative multiplier for better proportion
+        // Also scale asteroid size with the same scaleFactor for consistency
+        const rawSize = Number(ast.size || ast.Size);
+        const size = Math.max(0.02, rawSize * scaleFactor * 2);
 
         const geometry = new THREE.SphereGeometry(size, 16, 16);
         const material = new THREE.MeshPhongMaterial({
