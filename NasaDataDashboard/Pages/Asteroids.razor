@@ -62,10 +62,14 @@ else
                 {
                     Position = pos,
                     Size = Math.Max(0.08m, asteroid.DiameterKm * 0.002m),
-                    Color = "#ffffff"
+                    Color = "#ffffff",
+                    Diameter = asteroid.DiameterKm,
+                    Name = asteroid.Name,
+                    DistanceFromSun = asteroid.ApproximateDistanceKm,
+                    IsPotentiallyHazardous = asteroid.IsPha,
+                    OrbitalPeriod = asteroid.OrbitalPeriodDays
                 });
         }
-
         return visuals;
     }
 

@@ -276,14 +276,23 @@ function createInfoPanel(container) {
 }
 
 function onAsteroidClick(event) {
+    console.log("Click event fired!");
+    console.log("Renderer element:", renderer.domElement);
+    console.log("Number of asteroid objects:", asteroidObjects.length);
+
     const rect = renderer.domElement.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
+    console.log("Mouse coordinates:", mouse.x, mouse.y);
+
     raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObjects(asteroidObjects);
 
+    console.log("Intersects found:", intersects.length);
+
     if (intersects.length > 0) {
+        console.log("Asteroid clicked! Calling showAsteroidInfo...");
         const clickedAsteroid = intersects[0].object;
         showAsteroidInfo(clickedAsteroid);
 
@@ -293,22 +302,125 @@ function onAsteroidClick(event) {
         });
         clickedAsteroid.material.emissive.setHex(0x444444);
     } else {
+        console.log("No asteroid clicked, hiding info panel");
         hideAsteroidInfo();
         asteroidObjects.forEach(obj => {
             obj.material.emissive.setHex(0x000000);
         });
     }
 }
-
 function showAsteroidInfo(asteroidMesh) {
     const data = asteroidMesh.userData.asteroidData;
+
+    console.log("Full asteroid data:", data);
+    console.log("Data keys:", Object.keys(data));
+    console.log("Raw diameter value:", data.diameter, "Type:", typeof data.diameter);
+    console.log("Raw Diameter value:", data.Diameter, "Type:", typeof data.Diameter);
+
     const pos = data.position || data.Position;
     const size = data.size || data.Size;
 
+    // Extract additional data fields
+    const name = data.name || data.Name;
+    const diameter = data.diameter || data.Diameter;
+    const distanceFromSun = data.distanceFromSun || data.DistanceFromSun;
+    const orbitalPeriod = data.orbitalPeriod || data.OrbitalPeriod;
+    const isPHA = data.isPotentiallyHazardous || data.IsPotentiallyHazardous || false;
+
+    console.log("Extracted values:", {
+        name,
+        diameter,
+        distanceFromSun,
+        orbitalPeriod,
+        isPHA
+    });
+
+    // Calculate distance from origin (represents distance from sun in scene)
+    const sceneDistance = Math.sqrt(
+        Math.pow(asteroidMesh.position.x, 2) +
+        Math.pow(asteroidMesh.position.y, 2) +
+        Math.pow(asteroidMesh.position.z, 2)
+    );
+
     let html = '<h3 style="margin: 0 0 10px 0; color: #ffa500;">Asteroid Info</h3>';
-    html += `<p><strong>Position:</strong><br/>X: ${Number(pos.x || pos.X).toFixed(4)}<br/>Y: ${Number(pos.y || pos.Y).toFixed(4)}<br/>Z: ${Number(pos.z || pos.Z).toFixed(4)}</p>`;
-    html += `<p><strong>Size:</strong> ${Number(size).toFixed(4)}</p>`;
-    html += `<p style="font-size: 11px; color: #aaa; margin-top: 10px;">Click elsewhere to deselect</p>`;
+
+    // Name - show if available and not empty
+    if (name && name.trim() !== '') {
+        html += `<p style="margin: 5px 0;"><strong style="color: #ffcc66;">${name}</strong></p>`;
+    }
+
+    // Hazard warning
+    if (isPHA) {
+        html += `<p style="margin: 8px 0; padding: 5px; background: rgba(255, 0, 0, 0.2); border: 1px solid #ff0000; border-radius: 4px; font-size: 12px;">
+            Potentially Hazardous
+        </p>`;
+    }
+
+    // Physical characteristics section
+    html += '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #444;">';
+    html += '<p style="margin: 5px 0; color: #aaa; font-size: 12px;"><strong>Physical Properties</strong></p>';
+
+    // Check if diameter exists and is a valid number
+    if (diameter != null && !isNaN(Number(diameter)) && Number(diameter) > 0) {
+        html += `<p style="margin: 5px 0;"><strong>Diameter:</strong> ${Number(diameter).toFixed(2)} km</p>`;
+    }
+
+    html += `<p style="margin: 5px 0;"><strong>Relative Size:</strong> ${Number(size).toFixed(4)}</p>`;
+    html += '</div>';
+
+    // Orbital information section
+    html += '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #444;">';
+    html += '<p style="margin: 5px 0; color: #aaa; font-size: 12px;"><strong>Orbital Properties</strong></p>';
+
+    // Check if distanceFromSun exists and is valid
+    if (distanceFromSun != null && !isNaN(Number(distanceFromSun)) && Number(distanceFromSun) > 0) {
+        const distNum = Number(distanceFromSun);
+
+        // Check if the value is likely in kilometers (very large number) or AU
+        if (distNum > 1000000) {
+            // Likely in kilometers, convert to AU
+            const distanceInAU = distNum / 149597871;
+            html += `<p style="margin: 5px 0;"><strong>Distance from Sun:</strong> ${distanceInAU.toFixed(3)} AU</p>`;
+            html += `<p style="margin: 5px 0; font-size: 11px; color: #888;">(${(distNum / 1000000).toFixed(2)} million km)</p>`;
+        } else {
+            // Already in AU
+            html += `<p style="margin: 5px 0;"><strong>Distance from Sun:</strong> ${distNum.toFixed(3)} AU</p>`;
+        }
+    } else {
+        html += `<p style="margin: 5px 0;"><strong>Scene Distance:</strong> ${sceneDistance.toFixed(2)} units</p>`;
+    }
+
+    // Check if orbitalPeriod exists and is valid
+    if (orbitalPeriod != null && !isNaN(Number(orbitalPeriod)) && Number(orbitalPeriod) > 0) {
+        const periodNum = Number(orbitalPeriod);
+
+        // Check if period is in days or years
+        if (periodNum > 100) {
+            // Likely in days, convert to years
+            const periodInYears = periodNum / 365.25;
+            html += `<p style="margin: 5px 0;"><strong>Orbital Period:</strong> ${periodInYears.toFixed(2)} years</p>`;
+            html += `<p style="margin: 5px 0; font-size: 11px; color: #888;">(${periodNum.toFixed(0)} days)</p>`;
+        } else {
+            // Already in years
+            html += `<p style="margin: 5px 0;"><strong>Orbital Period:</strong> ${periodNum.toFixed(2)} years</p>`;
+        }
+    }
+
+    html += '</div>';
+
+    // Position data collapsed
+    html += '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #444;">';
+    html += '<details style="cursor: pointer;">';
+    html += '<summary style="color: #888; font-size: 11px;">Technical Position Data</summary>';
+    html += `<p style="margin: 5px 0; font-size: 11px; color: #aaa;">
+        X: ${Number(pos.x || pos.X).toFixed(4)}<br/>
+        Y: ${Number(pos.y || pos.Y).toFixed(4)}<br/>
+        Z: ${Number(pos.z || pos.Z).toFixed(4)}
+    </p>`;
+    html += '</details>';
+    html += '</div>';
+
+    html += `<p style="font-size: 11px; color: #666; margin-top: 12px; text-align: center;">Click elsewhere to deselect</p>`;
 
     infoPanel.innerHTML = html;
     infoPanel.style.display = 'block';

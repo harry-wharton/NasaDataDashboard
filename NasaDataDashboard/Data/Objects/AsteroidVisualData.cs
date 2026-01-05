@@ -14,6 +14,23 @@ namespace NasaDataDashboard.Data.Objects
         [JsonPropertyName("color")]
         public string Color { get; set; } = "#ffffff";
         public List<Vector3d> OrbitPoints { get; set; } = new();
-    }
+
+		[JsonPropertyName("name")]
+		public string Name { get; set; } = "Unknown";
+
+		[JsonPropertyName("diameter")]
+		public decimal Diameter { get; set; } = 0; // in km
+
+		[JsonPropertyName("distanceFromSun")]
+		public decimal DistanceFromSun { get; set; } = 0; // in AU
+
+		[JsonPropertyName("orbitalPeriod")]
+		public decimal OrbitalPeriod { get; set; } = 0; // in years
+
+		[JsonPropertyName("isPotentiallyHazardous")]
+		public bool IsPotentiallyHazardous { get; set; } = false;
+
+
+	}
 
 }
