@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using NasaDataDashboard.Data.Objects;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Web;
 
@@ -23,11 +24,17 @@ namespace NasaDataDashboard.Data.Services
 			bool phaOnly = false, // pha = potentially hazardous asteroid
 			double? maxDistance = null)
 		{
+			var sbdbApiTimer = Stopwatch.StartNew();
+
 			// Try to get the cached data
 			var cacheKey = $"sbdb_neo_{limit}_{phaOnly}_{maxDistance}";
 			if (_cache.TryGetValue(cacheKey, out List<AsteroidWithOrbitalData> cached))
 				if (cached != null)
-					return cached;
+				{
+                    sbdbApiTimer.Stop();
+					Console.WriteLine($"Cached SBDB response time: {sbdbApiTimer.ElapsedMilliseconds}ms ({sbdbApiTimer.ElapsedTicks} ticks)");
+                    return cached;
+                }
 
 			try
 			{
@@ -80,7 +87,11 @@ namespace NasaDataDashboard.Data.Services
 					return new List<AsteroidWithOrbitalData>();
 				}
 
-				var asteroids = MapAsteroidData(response);
+				// Log api response time
+                sbdbApiTimer.Stop();
+                Console.WriteLine($"SBDB API response time: {sbdbApiTimer.ElapsedMilliseconds}ms");
+
+                var asteroids = MapAsteroidData(response);
 
 				// Cache for 2 hours (orbital data doesn't change frequently)
 				_cache.Set(cacheKey, asteroids, TimeSpan.FromHours(2));
