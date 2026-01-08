@@ -2,6 +2,7 @@
 @namespace NasaDataDashboard.Pages
 @using NasaDataDashboard.CalculationEngine
 @using NasaDataDashboard.Data.Objects
+@using System.Diagnostics
 @inject Data.Services.SbdbApiService SbdbApiService
 @inject IJSRuntime JS
 
@@ -75,6 +76,9 @@ else
 
     private async Task RenderAsteroidsJs()
     {
+        // For the asteroids render time
+        var asteroidRenderTimer = Stopwatch.StartNew();
+
         if (_module == null)
         {
             _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/asteroids3d.mjs");
@@ -82,6 +86,8 @@ else
 
         var visualData = GenerateAsteroidVisualData(_filteredAsteroids);
         await _module.InvokeVoidAsync("renderAsteroids", visualData);
+        asteroidRenderTimer.Stop();
+        Console.WriteLine($"Asteroids took {asteroidRenderTimer.ElapsedMilliseconds}ms to render");
     }
 }
 
