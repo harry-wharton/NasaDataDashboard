@@ -31,7 +31,7 @@ namespace NasaDataDashboard.Data.Services
 
                 // Log time taken for cache retrieval
                 neoApiTimer.Stop();
-                Console.WriteLine($"Cached NEO data response time: {neoApiTimer.ElapsedMilliseconds}ms");
+                Console.WriteLine($"Cached NEO data response time: {neoApiTimer.ElapsedMilliseconds}ms ({neoApiTimer.ElapsedTicks} ticks)");
 
                 return cachedData!;
             }
@@ -81,7 +81,7 @@ namespace NasaDataDashboard.Data.Services
 
                     // Log time taken for cache retrieval
                     neoApiTimer.Stop();
-                    Console.WriteLine($"Cached NEO data response time: {neoApiTimer.ElapsedMilliseconds}ms");
+                    Console.WriteLine($"Cached NEO data response time: {neoApiTimer.ElapsedMilliseconds}ms ({neoApiTimer.ElapsedTicks} ticks)");
 
                     return cachedData!;
 				}
