@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using NasaDataDashboard.Data.Objects;
 
@@ -21,10 +22,17 @@ namespace NasaDataDashboard.Data.Services
 
         public async Task<List<AsteroidData>> GetNeoAsync()
         {
+            var neoApiTimer = Stopwatch.StartNew();
+
             // Try to get from cache
             if (_cache.TryGetValue(CacheKey, out List<AsteroidData>? cachedData)) 
             {
                 Console.WriteLine("Returning cached data");
+
+                // Log time taken for cache retrieval
+                neoApiTimer.Stop();
+                Console.WriteLine($"Cached NEO data response time: {neoApiTimer.ElapsedMilliseconds}ms");
+
                 return cachedData!;
             }
 
@@ -41,6 +49,10 @@ namespace NasaDataDashboard.Data.Services
 
                 if (response.IsSuccessStatusCode)
                 {
+                    // Log time taken for data retrieval
+                    neoApiTimer.Stop();
+                    Console.WriteLine($"NEO API response time: {neoApiTimer.ElapsedMilliseconds}ms");
+
                     var jsonString = await response.Content.ReadAsStringAsync();
                     var jsonDocument = JsonDocument.Parse(jsonString);
                     var parser = new Parsers.ParseToObject();
@@ -57,12 +69,6 @@ namespace NasaDataDashboard.Data.Services
                     return asteroidData;
                 }
 
-                if (_cache.TryGetValue(CacheKey, out cachedData))
-                {
-                    Console.WriteLine("API failed, but here's the old cached data.");
-                    return cachedData!;
-                }
-
                 return new List<AsteroidData>();
             }
             catch (Exception ex)
@@ -72,7 +78,12 @@ namespace NasaDataDashboard.Data.Services
 				if (_cache.TryGetValue(CacheKey, out cachedData))
 				{
 					Console.WriteLine("exception, but here's the old cached data.");
-					return cachedData!;
+
+                    // Log time taken for cache retrieval
+                    neoApiTimer.Stop();
+                    Console.WriteLine($"Cached NEO data response time: {neoApiTimer.ElapsedMilliseconds}ms");
+
+                    return cachedData!;
 				}
 
                 return new List<AsteroidData>();
