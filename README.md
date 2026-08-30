@@ -2,6 +2,8 @@
 
 A Blazor Server dashboard for exploring near-Earth asteroid data, with orbital positions propagated from raw orbital elements — not just pulled from an API — and rendered as an interactive 3D scene.
 
+Yes it is a bit of a messy uni project at the moment but that's what makes it fun... improvements to come lol
+
 It's a deliberately mixed stack: a C# backend does the actual orbital mechanics, Blazor/MudBlazor handles the dashboard UI, and a Three.js module is injected via JS interop for the one job a server-rendered UI can't do well — an interactive, clickable 3D view. Rather than fight the framework for that, it hands it to the browser.
 
 ## The maths
