@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34902.65
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NasaDataDashboard", "NasaDataDashboard\NasaDataDashboard.csproj", "{9729A05D-08A1-40D6-BD50-D1B7ECF10FE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NasaDataDashboard", "NasaDataDashboard\NasaDataDashboard.csproj", "{9729A05D-08A1-40D6-BD50-D1B7ECF10FE4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NasaDataDashboard.Tests", "NasaDataDashboard.Tests\NasaDataDashboard.Tests.csproj", "{73C5C929-D448-4C40-B7F0-B88CFEEA7E60}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{9729A05D-08A1-40D6-BD50-D1B7ECF10FE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9729A05D-08A1-40D6-BD50-D1B7ECF10FE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9729A05D-08A1-40D6-BD50-D1B7ECF10FE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73C5C929-D448-4C40-B7F0-B88CFEEA7E60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73C5C929-D448-4C40-B7F0-B88CFEEA7E60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73C5C929-D448-4C40-B7F0-B88CFEEA7E60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73C5C929-D448-4C40-B7F0-B88CFEEA7E60}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

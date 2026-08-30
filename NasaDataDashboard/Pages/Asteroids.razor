@@ -1,0 +1,94 @@
+﻿@page "/asteroids"
+@namespace NasaDataDashboard.Pages
+@using NasaDataDashboard.CalculationEngine
+@using NasaDataDashboard.Data.Objects
+@using System.Diagnostics
+@inject Data.Services.SbdbApiService SbdbApiService
+@inject IJSRuntime JS
+
+<PageTitle>3D Asteroid View</PageTitle>
+
+<MudButton 
+    Href="/"
+    Variant="Variant.Filled"
+    Color="Color.Primary"
+    Size="Size.Medium"
+    StartIcon="@Icons.Material.Filled.ArrowBack">
+    Go Back
+</MudButton>
+
+<h3>3D Asteroid Orbit Visualization</h3>
+
+<div id="asteroid-3d-canvas" style="width:100%; height:1000px; background:black;"></div>
+
+@if (_loading)
+{
+            <MudProgressLinear Indeterminate="true" />
+}
+else if (_filteredAsteroids.Any())
+{
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="RenderAsteroidsJs">
+                Render Asteroids
+            </MudButton>
+}
+else
+{
+            <p>No asteroids to display.</p>
+}
+
+@code {
+    private bool _loading = true;
+    private List<AsteroidWithOrbitalData> _asteroids = new();
+    private List<AsteroidWithOrbitalData> _filteredAsteroids = new();
+    private IJSObjectReference? _module;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _asteroids = await SbdbApiService.GetNeoOrbitalDataAsync();
+        _filteredAsteroids = _asteroids; // initially show all
+        _loading = false;
+    }
+
+    // Converts filtered asteroids to JS-friendly visual data
+    private List<AsteroidVisualData> GenerateAsteroidVisualData(List<AsteroidWithOrbitalData> asteroids)
+    {
+        var visuals = new List<AsteroidVisualData>();
+        var utcNow = DateTime.UtcNow;
+
+        foreach (var asteroid in asteroids)
+        {
+            var pos = OrbitalCalculator.PositionAtUtc(asteroid, utcNow);
+            if (pos == null) continue; // skip asteroids without positions
+            visuals.Add(new AsteroidVisualData
+                {
+                    Position = pos,
+                    Size = Math.Max(0.08m, asteroid.DiameterKm * 0.002m),
+                    Color = "#ffffff",
+                    Diameter = asteroid.DiameterKm,
+                    Name = asteroid.Name,
+                    DistanceFromSun = asteroid.ApproximateDistanceKm,
+                    IsPotentiallyHazardous = asteroid.IsPha,
+                    OrbitalPeriod = asteroid.OrbitalPeriodDays
+                });
+        }
+        return visuals;
+    }
+
+    private async Task RenderAsteroidsJs()
+    {
+        // For the asteroids render time
+        var asteroidRenderTimer = Stopwatch.StartNew();
+
+        if (_module == null)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/asteroids3d.mjs");
+        }
+
+        var visualData = GenerateAsteroidVisualData(_filteredAsteroids);
+        await _module.InvokeVoidAsync("renderAsteroids", visualData);
+
+        asteroidRenderTimer.Stop();
+        Console.WriteLine($"Asteroids took {asteroidRenderTimer.ElapsedMilliseconds}ms to render");
+    }
+}
+

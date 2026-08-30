@@ -1,9 +1,17 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using MudBlazor.Services;
+using NasaDataDashboard.Data.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMemoryCache();
+
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.AddMudServices();
+builder.Services.AddHttpClient<NasaApiService>();
+builder.Services.AddHttpClient<SbdbApiService>();
 
 var app = builder.Build();
 
