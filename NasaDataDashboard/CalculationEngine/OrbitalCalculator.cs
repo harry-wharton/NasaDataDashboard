@@ -34,7 +34,7 @@ namespace NasaDataDashboard.CalculationEngine
             return angle - PI;
         }
 
-        // Convert Julian Date to Unix milliseconds (ms since 1970-01-01 UTC)
+        // Convert Julian Date to Unix milliseconds (ms since 1970-01-01)
         public static decimal JulianDateToUnixMilliseconds(decimal jd)
         {
             const decimal UnixEpochJd = 2440587.5m;
@@ -85,7 +85,7 @@ namespace NasaDataDashboard.CalculationEngine
             return (decimal)E;
         }
 
-        // Convert eccentric anomaly E → true anomaly ν
+        // Convert eccentric anomaly E to true anomaly ν
         private static decimal EccentricToTrueAnomaly(decimal Edec, decimal edec)
         {
             double E = (double)Edec;
@@ -109,18 +109,25 @@ namespace NasaDataDashboard.CalculationEngine
             decimal inc = DegreesToRadians(inclinationDeg);
             decimal ascNode = DegreesToRadians(ascendingNodeDeg);
             decimal argPeri = DegreesToRadians(argPeriDeg);
-
+               
+            // Find E from mean anomaly M
             decimal E = SolveEccentricAnomaly(meanAnomalyRad, e);
             double E_d = (double)E;
 
+            // Find distance from the sun: r using eulers   
             decimal r = aAu * (1 - e * (decimal)Math.Cos(E_d));
 
+            // Convert E to true anomaly v
             decimal trueAnomaly = EccentricToTrueAnomaly(E, e);
             double v = (double)trueAnomaly;
 
             decimal xOrb = r * (decimal)Math.Cos(v);
             decimal yOrb = r * (decimal)Math.Sin(v);
 
+            /*
+              From api we have W = argument of perihelion
+              I = inclination, O = longitude of ascending node
+             */
             double cosW = Math.Cos((double)argPeri);
             double sinW = Math.Sin((double)argPeri);
             double cosI = Math.Cos((double)inc);
@@ -128,6 +135,7 @@ namespace NasaDataDashboard.CalculationEngine
             double cosO = Math.Cos((double)ascNode);
             double sinO = Math.Sin((double)ascNode);
 
+            // We can now use these to find 3D orbital coords
             decimal x =
                 (decimal)(cosO * cosW - sinO * sinW * cosI) * xOrb +
                 (decimal)(-cosO * sinW - sinO * cosW * cosI) * yOrb;
@@ -172,5 +180,5 @@ namespace NasaDataDashboard.CalculationEngine
             decimal unixMs = (decimal)(utcTime - DateTime.UnixEpoch).TotalMilliseconds;
             return PositionAtUnixMilliseconds(elements, unixMs);
         }
-    }
+    }       
 }

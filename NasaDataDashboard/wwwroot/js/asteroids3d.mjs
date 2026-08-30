@@ -139,7 +139,7 @@ export function renderAsteroids(visualData) {
     /*
     Sun 
     */
-    const sunRadius = 0.3;
+    const sunRadius = 0.08;
 
     if (sunMesh) {
         scene.remove(sunMesh);

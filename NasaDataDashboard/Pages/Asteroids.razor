@@ -86,6 +86,7 @@ else
 
         var visualData = GenerateAsteroidVisualData(_filteredAsteroids);
         await _module.InvokeVoidAsync("renderAsteroids", visualData);
+
         asteroidRenderTimer.Stop();
         Console.WriteLine($"Asteroids took {asteroidRenderTimer.ElapsedMilliseconds}ms to render");
     }

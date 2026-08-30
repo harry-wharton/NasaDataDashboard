@@ -53,6 +53,7 @@ namespace NasaDataDashboard.Data.Services
                     neoApiTimer.Stop();
                     Console.WriteLine($"NEO API response time: {neoApiTimer.ElapsedMilliseconds}ms");
 
+                    // Parse string into a JSON doc, then call my parser to extract data
                     var jsonString = await response.Content.ReadAsStringAsync();
                     var jsonDocument = JsonDocument.Parse(jsonString);
                     var parser = new Parsers.ParseToObject();

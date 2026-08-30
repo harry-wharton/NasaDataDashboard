@@ -93,7 +93,7 @@ namespace NasaDataDashboard.Data.Services
 
                 var asteroids = MapAsteroidData(response);
 
-				// Cache for 2 hours (orbital data doesn't change frequently)
+				// Cache for 2 hours
 				_cache.Set(cacheKey, asteroids, TimeSpan.FromHours(2));
 
 				Console.WriteLine($"Successfully fetched {asteroids.Count} asteroids from SBDB Query API");
